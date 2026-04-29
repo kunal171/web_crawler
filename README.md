@@ -92,7 +92,7 @@ learn the async and networking pieces carefully.
 
 ## Current State
 
-The project is newly created.
+The project is in Milestone 1.
 
 Current files:
 
@@ -105,7 +105,25 @@ web_crawler/
     └── main.rs
 ```
 
-`src/main.rs` currently contains the default `Hello, world!` program.
+Current progress:
+
+- Dependencies for async HTTP and HTML parsing have been added.
+- `src/main.rs` accepts a URL from CLI args.
+- It fetches the page with `reqwest`.
+- It reads the HTTP status.
+- It parses the HTML with `scraper`.
+- It extracts the `<title>`.
+- It counts links from `<a href="...">`.
+
+Current target:
+
+```text
+cargo run -- https://example.com
+    |
+fetch page
+    |
+print status, title, and link count
+```
 
 ## Planned Learning Concepts
 
@@ -146,6 +164,8 @@ What each one is for:
 
 ## Milestone 1
 
+Status: in progress.
+
 Fetch one URL and print:
 
 - HTTP status
@@ -162,6 +182,13 @@ fetch page
 parse HTML
     |
 print title and link count
+```
+
+Why this comes first:
+
+```text
+If the crawler cannot fetch and parse one page,
+it should not start crawling multiple pages yet.
 ```
 
 ## Milestone 2
