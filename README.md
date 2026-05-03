@@ -92,7 +92,7 @@ learn the async and networking pieces carefully.
 
 ## Current State
 
-The project is in Milestone 1.
+Milestone 1 is complete. Milestone 2 (link normalization) is mostly complete.
 
 Current files:
 
@@ -102,27 +102,33 @@ web_crawler/
 ├── README.md
 ├── .gitignore
 └── src/
-    └── main.rs
+    ├── main.rs
+    ├── cli.rs
+    ├── fetcher.rs
+    ├── parser.rs
+    └── output.rs
 ```
 
 Current progress:
 
-- Dependencies for async HTTP and HTML parsing have been added.
-- `src/main.rs` accepts a URL from CLI args.
-- It fetches the page with `reqwest`.
-- It reads the HTTP status.
-- It parses the HTML with `scraper`.
-- It extracts the `<title>`.
-- It counts links from `<a href="...">`.
+- Dependencies for Tokio, Reqwest, Scraper, URL parsing, and logging have been added.
+- The implementation is split into modules: `cli`, `fetcher`, `parser`, and `output`.
+- `cli.rs` reads the starting URL from command-line args.
+- `fetcher.rs` fetches one page with `reqwest` and returns status and body.
+- `parser.rs` parses HTML with `scraper`, extracts the page title, normalizes relative links with `url::Url::join`, and filters for HTTP/HTTPS links.
+- `output.rs` prints the URL, status, title, link count, and each link.
+- `parser.rs` has unit tests for title extraction, link normalization, unsupported link filtering, and missing-title fallback.
+- `cargo test` passes with 2 parser tests.
+- `cargo fmt --check` passes.
 
-Current target:
+Current command:
 
 ```text
 cargo run -- https://example.com
     |
 fetch page
     |
-print status, title, and link count
+print status, title, link count, and normalized links
 ```
 
 ## Planned Learning Concepts
@@ -164,13 +170,14 @@ What each one is for:
 
 ## Milestone 1
 
-Status: in progress.
+Status: complete.
 
 Fetch one URL and print:
 
 - HTTP status
 - page title
 - number of links found
+- each normalized link
 
 Target flow:
 
@@ -193,14 +200,20 @@ it should not start crawling multiple pages yet.
 
 ## Milestone 2
 
-Extract links from the page.
+Status: mostly complete.
 
-Important details:
+Extract and normalize links from the page.
 
-- Only look at `<a href="...">`.
-- Convert relative links into absolute URLs.
-- Ignore invalid URLs.
-- Keep links on the same domain at first.
+Completed:
+
+- Only looks at `<a href="...">`.
+- Converts relative links into absolute URLs using `Url::join`.
+- Filters for HTTP/HTTPS links only (ignores `mailto:`, `javascript:`, etc.).
+- Unit tests cover normalization, filtering, and missing-title fallback.
+
+Remaining:
+
+- Same-domain filtering (only follow links on the starting domain).
 
 ## Milestone 3
 
