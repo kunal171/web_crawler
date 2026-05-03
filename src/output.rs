@@ -1,3 +1,5 @@
+//! Output formatting: prints the page summary (URL, status, title, links) to stdout.
+
 use crate::parser::PageInfo;
 use reqwest::StatusCode;
 

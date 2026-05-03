@@ -1,3 +1,6 @@
+//! Crawl loop: manages the BFS queue, visited set, and depth/page limits.
+//! Coordinates fetcher, parser, and output to crawl same-domain pages.
+
 use std::collections::{HashSet, VecDeque};
 use std::error::Error;
 use std::rc::Rc;

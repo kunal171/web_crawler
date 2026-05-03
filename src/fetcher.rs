@@ -1,3 +1,5 @@
+//! HTTP fetching: sends a GET request and returns the status code and response body.
+
 use reqwest::StatusCode;
 
 #[derive(Debug)]

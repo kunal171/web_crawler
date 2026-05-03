@@ -1,3 +1,5 @@
+//! CLI argument handling: reads the starting URL from command-line args.
+
 use std::env;
 
 pub fn read_start_url() -> Result<String, String> {

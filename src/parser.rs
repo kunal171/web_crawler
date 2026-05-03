@@ -1,3 +1,5 @@
+//! HTML parsing: extracts the page title and same-domain links from a fetched page body.
+
 use scraper::{Html, Selector};
 use url::Url;
 

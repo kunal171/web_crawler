@@ -1,3 +1,5 @@
+//! Entry point: parses the CLI arg, validates the URL, and hands off to the crawler.
+
 mod cli;
 mod crawler;
 mod fetcher;
