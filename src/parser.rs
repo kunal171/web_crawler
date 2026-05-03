@@ -46,6 +46,7 @@ fn extract_links(document: &Html, base_url: &Url) -> Vec<Url> {
         .filter_map(|element| element.value().attr("href"))
         .filter_map(|href| base_url.join(href).ok())
         .filter(|url| url.scheme() == "http" || url.scheme() == "https")
+        .filter(|url| url.host() == base_url.host())
         .collect()
 }
 
