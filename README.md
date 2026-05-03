@@ -92,7 +92,7 @@ learn the async and networking pieces carefully.
 
 ## Current State
 
-Milestone 1 is complete. Milestone 2 (link normalization) is mostly complete.
+Milestones 1, 2, and 3 are complete. Next: Milestone 4 (controlled async concurrency).
 
 Current files:
 
@@ -106,17 +106,21 @@ web_crawler/
     ├── cli.rs
     ├── fetcher.rs
     ├── parser.rs
-    └── output.rs
+    ├── output.rs
+    └── crawler.rs
 ```
 
 Current progress:
 
 - Dependencies for Tokio, Reqwest, Scraper, URL parsing, and logging have been added.
-- The implementation is split into modules: `cli`, `fetcher`, `parser`, and `output`.
+- The implementation is split into modules: `cli`, `fetcher`, `parser`, `output`, and `crawler`.
 - `cli.rs` reads the starting URL from command-line args.
 - `fetcher.rs` fetches one page with `reqwest` and returns status and body.
-- `parser.rs` parses HTML with `scraper`, extracts the page title, normalizes relative links with `url::Url::join`, and filters for HTTP/HTTPS links.
+- `parser.rs` parses HTML with `scraper`, extracts the page title, normalizes relative links with `url::Url::join`, and filters for HTTP/HTTPS same-domain links.
 - `output.rs` prints the URL, status, title, link count, and each link.
+- `crawler.rs` implements the crawl loop with `VecDeque<CrawlEntry>` queue, `HashSet<Rc<Url>>` visited set, depth tracking, max page/depth limits, and progress logging.
+- `main.rs` calls `crawler::crawl()` with hardcoded limits (max_pages: 10, max_depth: 2).
+- Uses `Rc<Url>` for cheap shared ownership between the queue and visited set.
 - `parser.rs` has unit tests for title extraction, link normalization, unsupported link filtering, and missing-title fallback.
 - `cargo test` passes with 2 parser tests.
 - `cargo fmt --check` passes.
@@ -126,9 +130,11 @@ Current command:
 ```text
 cargo run -- https://example.com
     |
-fetch page
+crawl same-domain pages breadth-first
     |
-print status, title, link count, and normalized links
+print progress, page summaries, and queue stats
+    |
+stop at max pages or max depth
 ```
 
 ## Planned Learning Concepts
@@ -200,40 +206,29 @@ it should not start crawling multiple pages yet.
 
 ## Milestone 2
 
-Status: mostly complete.
+Status: complete.
 
 Extract and normalize links from the page.
-
-Completed:
 
 - Only looks at `<a href="...">`.
 - Converts relative links into absolute URLs using `Url::join`.
 - Filters for HTTP/HTTPS links only (ignores `mailto:`, `javascript:`, etc.).
+- Filters for same-domain links only.
 - Unit tests cover normalization, filtering, and missing-title fallback.
-
-Remaining:
-
-- Same-domain filtering (only follow links on the starting domain).
 
 ## Milestone 3
 
-Add a crawl queue:
+Status: complete.
 
-```text
-VecDeque<Url> queue
-HashSet<Url> visited
-```
+Crawl loop with queue and visited tracking:
 
-Basic loop:
-
-```text
-pop URL from queue
-skip if already visited
-fetch page
-extract links
-push new links into queue
-stop at max pages or max depth
-```
+- `VecDeque<CrawlEntry>` queue for breadth-first traversal.
+- `HashSet<Rc<Url>>` for visited URL deduplication.
+- `Rc<Url>` for cheap shared ownership between queue and visited set.
+- `CrawlEntry` holds `Rc<Url>` and `depth`.
+- Stops at `max_pages` or `max_depth` limits.
+- Gracefully handles fetch errors and non-success HTTP status.
+- Progress logging: fetch progress, queue size, visited count.
 
 ## Milestone 4
 
