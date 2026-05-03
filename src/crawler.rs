@@ -1,34 +1,37 @@
 use std::collections::{HashSet, VecDeque};
-use url::Url;
 use std::error::Error;
 use std::rc::Rc;
+use url::Url;
+
 use crate::fetcher;
 use crate::output;
 use crate::parser;
 
-
-// A simple web crawler that starts from a given URL and explores linked pages up to a specified depth.
+/// Each entry in the crawl queue pairs a URL with how many hops it is from the start URL.
 struct CrawlEntry {
     url: Rc<Url>,
     depth: usize,
-}   
+}
 
-// The main crawl function that manages the crawling process, including fetching pages, parsing them, and queuing new links.
+/// Breadth-first crawl starting from `start_url`.
+///
+/// Stops when `max_pages` have been successfully fetched or no queued URL
+/// is within `max_depth` hops of the start.
 pub async fn crawl(start_url: Url, max_pages: usize, max_depth: usize) -> Result<(), Box<dyn Error>> {
-    let mut queue = VecDeque::new();
-    let mut visited = HashSet::new();
+    // VecDeque gives FIFO order, so shallower pages are visited before deeper ones.
+    let mut queue: VecDeque<CrawlEntry> = VecDeque::new();
+    // Rc<Url> lets the visited set and queue share URL ownership without deep-cloning the string.
+    let mut visited: HashSet<Rc<Url>> = HashSet::new();
     let mut pages_fetched: usize = 0;
 
     println!("Starting crawl from: {start_url}");
     println!("Max pages: {max_pages}, Max depth: {max_depth}");
     println!();
 
-    queue.push_back(
-        CrawlEntry {
-            url: Rc::new(start_url),
-            depth: 0,
-        }
-    );
+    queue.push_back(CrawlEntry {
+        url: Rc::new(start_url),
+        depth: 0,
+    });
 
     while let Some(entry) = queue.pop_front() {
         if pages_fetched >= max_pages {
@@ -39,12 +42,20 @@ pub async fn crawl(start_url: Url, max_pages: usize, max_depth: usize) -> Result
             continue;
         }
 
+        // insert() returns false if the URL was already present — acts as both check and mark.
         if !visited.insert(Rc::clone(&entry.url)) {
-            continue; // Skip already visited URLs
+            continue;
         }
 
-        println!("[{}/{}] Depth {} | Fetching: {}", pages_fetched + 1, max_pages, entry.depth, entry.url);
+        println!(
+            "[{}/{}] Depth {} | Fetching: {}",
+            pages_fetched + 1,
+            max_pages,
+            entry.depth,
+            entry.url
+        );
 
+        // Non-fatal: a single failed fetch shouldn't stop the entire crawl.
         let page = match fetcher::fetch_page(entry.url.as_str()).await {
             Ok(page) => page,
             Err(e) => {
@@ -62,6 +73,7 @@ pub async fn crawl(start_url: Url, max_pages: usize, max_depth: usize) -> Result
         output::print_page_summary(entry.url.as_str(), page.status, &page_info);
         println!();
 
+        // Only enqueue links not already visited to keep the queue small.
         let mut new_count = 0;
         for link in page_info.links {
             let rc_link = Rc::new(link);
@@ -75,9 +87,13 @@ pub async fn crawl(start_url: Url, max_pages: usize, max_depth: usize) -> Result
         }
 
         pages_fetched += 1;
-        println!("  Queued {} new links | Queue size: {} | Visited: {}", new_count, queue.len(), visited.len());
+        println!(
+            "  Queued {} new links | Queue size: {} | Visited: {}",
+            new_count,
+            queue.len(),
+            visited.len()
+        );
         println!();
-
     }
 
     println!("Crawl complete: {pages_fetched} pages fetched");

@@ -1,16 +1,14 @@
 use scraper::{Html, Selector};
 use url::Url;
 
-// Represents the extracted information from a page, including the title, number of links, and list of links.
 pub struct PageInfo {
     pub title: String,
     pub links: Vec<Url>,
     pub link_count: usize,
 }
 
-// Parses the HTML body of a page and extracts the title, link count, and list of links.
+/// Parses an HTML body and extracts the page title and same-domain HTTP/HTTPS links.
 pub fn parse_page_info(base_url: &Url, body: &str) -> PageInfo {
-    // Build an HTML document tree that can be queried with CSS selectors.
     let document = Html::parse_document(body);
 
     let title = extract_title(&document);
@@ -24,11 +22,9 @@ pub fn parse_page_info(base_url: &Url, body: &str) -> PageInfo {
     }
 }
 
-// Extracts the text content of the <title> element, or returns a fallback string if not found.
 fn extract_title(document: &Html) -> String {
     let title_selector = Selector::parse("title").expect("Failed to parse title selector");
 
-    // Select the first <title> element and collect its text content, or return a default message if no title is found.
     document
         .select(&title_selector)
         .next()
@@ -36,21 +32,22 @@ fn extract_title(document: &Html) -> String {
         .unwrap_or_else(|| "No title found".to_string())
 }
 
-// Extracts the href attributes of all links on the page.
+/// Resolves each href against `base_url` so relative paths become absolute URLs,
+/// then keeps only HTTP/HTTPS links on the same domain.
 fn extract_links(document: &Html, base_url: &Url) -> Vec<Url> {
     let link_selector = Selector::parse("a[href]").expect("Failed to parse link selector");
 
-    // For each <a> element with an href attribute, resolve the URL against the base URL and filter for valid HTTP/HTTPS links.
     document
         .select(&link_selector)
         .filter_map(|element| element.value().attr("href"))
+        // join() resolves relative hrefs ("/about", "../page") against the base URL.
         .filter_map(|href| base_url.join(href).ok())
         .filter(|url| url.scheme() == "http" || url.scheme() == "https")
+        // Same-domain only: prevents the crawler from escaping to external sites.
         .filter(|url| url.host() == base_url.host())
         .collect()
 }
 
-// Unit tests for the parser module, verifying that titles and links are correctly extracted from HTML.
 #[cfg(test)]
 mod tests {
     use super::*;
