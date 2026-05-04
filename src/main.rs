@@ -1,9 +1,12 @@
+//! Entry point: parses the CLI arg, validates the URL, and hands off to the crawler.
+
 mod cli;
+mod crawler;
 mod fetcher;
 mod output;
 mod parser;
 
-// Tokio starts the async runtime so this async main function can use `.await`.
+/// Tokio's #[tokio::main] sets up the async runtime so .await works inside main.
 #[tokio::main]
 async fn main() {
     if let Err(error) = run().await {
@@ -14,15 +17,9 @@ async fn main() {
 
 async fn run() -> Result<(), Box<dyn std::error::Error>> {
     let url = cli::read_start_url()?;
-    let page = fetcher::fetch_page(&url).await?;
+    let parsed_url = url::Url::parse(&url)?;
 
-    if !page.status.is_success() {
-        eprintln!("Failed to fetch the URL: HTTP {}", page.status);
-        return Ok(());
-    }
-
-    let page_info = parser::parse_page_info(&page.body);
-    output::print_page_summary(&url, page.status, &page_info);
+    crawler::crawl(parsed_url, 10, 2).await?;
 
     Ok(())
 }

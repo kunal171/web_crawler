@@ -1,3 +1,5 @@
+//! HTTP fetching: sends a GET request and returns the status code and response body.
+
 use reqwest::StatusCode;
 
 #[derive(Debug)]
@@ -6,11 +8,11 @@ pub struct FetchedPage {
     pub body: String,
 }
 
+/// Fetches a page over HTTP. `.await` yields control while the network request is in flight.
 pub async fn fetch_page(url: &str) -> Result<FetchedPage, reqwest::Error> {
-    // Send a simple GET request. `.await` pauses this task while the network request runs.
     let response = reqwest::get(url).await?;
 
-    // Keep the status before consuming the response body.
+    // Grab status before .text() consumes the response body.
     let status = response.status();
     let body = response.text().await?;
 
