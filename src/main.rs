@@ -19,7 +19,7 @@ async fn run() -> Result<(), Box<dyn std::error::Error>> {
     let url = cli::read_start_url()?;
     let parsed_url = url::Url::parse(&url)?;
 
-    crawler::crawl(parsed_url, 10, 2).await?;
+    crawler::crawl(parsed_url, 10, 2, 4).await?;
 
     Ok(())
 }
